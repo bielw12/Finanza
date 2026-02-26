@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Finanza — Controle de Gastos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- ===== NAV ===== -->
+  <nav>
+    <div class="logo">Fin<span>anza</span></div>
+    <div class="nav-actions">
+      <button class="btn-nav secondary" onclick="openCatModal()">＋ Categoria</button>
+      <button class="btn-nav" onclick="openExpenseModal()">＋ Gasto</button>
+    </div>
+  </nav>
+
+  <!-- ===== MAIN ===== -->
+  <main>
+
+    <!-- Month Selector -->
+    <div class="month-header">
+      <div class="month-nav">
+        <button class="month-btn" onclick="changeMonth(-1)">‹</button>
+        <div class="month-label" id="monthLabel">—</div>
+        <button class="month-btn" onclick="changeMonth(1)">›</button>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-grid">
+      <div class="summary-card total">
+        <div class="summary-label">Total do mês</div>
+        <div class="summary-value" id="totalValue">R$ 0,00</div>
+        <div class="summary-sub" id="totalCount">0 gastos</div>
+      </div>
+      <div class="summary-card count">
+        <div class="summary-label">Categorias ativas</div>
+        <div class="summary-value" id="activeCats">0</div>
+        <div class="summary-sub" id="topCatSub">—</div>
+      </div>
+      <div class="summary-card top">
+        <div class="summary-label">Maior gasto</div>
+        <div class="summary-value" id="maxExpense">R$ 0,00</div>
+        <div class="summary-sub" id="maxExpenseName">—</div>
+      </div>
+      <div class="summary-card avg">
+        <div class="summary-label">Média por gasto</div>
+        <div class="summary-value" id="avgExpense">R$ 0,00</div>
+        <div class="summary-sub">neste mês</div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <div class="chart-title">Por categoria</div>
+        <div class="chart-wrap">
+          <canvas id="pieChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Distribuição</div>
+        <div class="cat-breakdown" id="catBreakdown"></div>
+      </div>
+    </div>
+
+    <!-- Expense List -->
+    <div class="expenses-section">
+      <div class="section-header">
+        <div class="section-title">Gastos do mês</div>
+        <div class="filters">
+          <select class="filter-select" id="filterCat" onchange="renderExpenses()">
+            <option value="">Todas as categorias</option>
+          </select>
+          <select class="filter-select" id="sortBy" onchange="renderExpenses()">
+            <option value="date-desc">Mais recente</option>
+            <option value="date-asc">Mais antigo</option>
+            <option value="amount-desc">Maior valor</option>
+            <option value="amount-asc">Menor valor</option>
+          </select>
+        </div>
+      </div>
+      <ul class="expense-list" id="expenseList"></ul>
+    </div>
+
+  </main>
+
+  <!-- ===== MODAL: GASTO ===== -->
+  <div class="overlay" id="expenseOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="expenseModalTitle">Novo Gasto</div>
+        <button class="modal-close" onclick="closeExpenseModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="expenseId" />
+
+        <div class="form-group">
+          <label class="form-label">Imagem (opcional)</label>
+          <div class="image-upload" id="imageUploadArea">
+            <input type="file" accept="image/*" id="imageInput" onchange="handleImageUpload(event)" />
+            <div id="imageUploadContent">
+              <div class="image-upload-icon">📷</div>
+              <div class="image-upload-text">Toque para adicionar uma foto</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Nome do gasto *</label>
+          <input type="text" class="form-input" id="expenseName" placeholder="Ex: Supermercado, Cinema..." />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Valor (R$) *</label>
+            <input type="number" class="form-input" id="expenseAmount" placeholder="0,00" min="0" step="0.01" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Data *</label>
+            <input type="date" class="form-input" id="expenseDate" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Categoria *</label>
+          <select class="form-select" id="expenseCat"></select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Observação</label>
+          <textarea class="form-textarea" id="expenseNote" placeholder="Detalhes extras..."></textarea>
+        </div>
+
+        <button class="btn-primary" onclick="saveExpense()">Salvar Gasto</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL: CATEGORIAS ===== -->
+  <div class="overlay" id="catOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Categorias</div>
+        <button class="modal-close" onclick="closeCatModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="cat-list" id="catList"></div>
+
+        <div class="form-label" style="margin-bottom: 10px">Nova categoria</div>
+        <div class="add-cat-row">
+          <input
+            type="text"
+            class="form-input"
+            id="newCatName"
+            placeholder="Nome da categoria"
+            maxlength="20"
+            onkeydown="if(event.key==='Enter') addCategory()"
+          />
+          <input type="color" class="color-pick" id="newCatColor" value="#e8c547" title="Cor" />
+          <button class="btn-add-cat" onclick="addCategory()" title="Adicionar">＋</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TOAST ===== -->
+  <div id="toast-container"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
